@@ -16,17 +16,17 @@ var marketDataSettings = builder.Configuration.GetSection("MarketData").Get<Mark
 // Register MongoDB services
 builder.Services.Configure<MongoSettings>(builder.Configuration.GetSection("Mongo"));
 builder.Services.AddSingleton<IMongoClient>(sp => new MongoClient(mongoSettings.ConnectionString));
-builder.Services.AddSingleton<IMongoDatabase>(sp => 
+builder.Services.AddSingleton<IMongoDatabase>(sp =>
     sp.GetRequiredService<IMongoClient>().GetDatabase(mongoSettings.Database));
 
 // Register MongoDB collections
-builder.Services.AddSingleton<IMongoCollection<Recommendation>>(sp => 
+builder.Services.AddSingleton<IMongoCollection<Recommendation>>(sp =>
     sp.GetRequiredService<IMongoDatabase>().GetCollection<Recommendation>("recommendations"));
-builder.Services.AddSingleton<IMongoCollection<Source>>(sp => 
+builder.Services.AddSingleton<IMongoCollection<Source>>(sp =>
     sp.GetRequiredService<IMongoDatabase>().GetCollection<Source>("sources"));
-builder.Services.AddSingleton<IMongoCollection<Outcome>>(sp => 
+builder.Services.AddSingleton<IMongoCollection<Outcome>>(sp =>
     sp.GetRequiredService<IMongoDatabase>().GetCollection<Outcome>("outcomes"));
-builder.Services.AddSingleton<IMongoCollection<Snapshot>>(sp => 
+builder.Services.AddSingleton<IMongoCollection<Snapshot>>(sp =>
     sp.GetRequiredService<IMongoDatabase>().GetCollection<Snapshot>("snapshots"));
 
 // Add HttpClient factory
@@ -35,8 +35,8 @@ builder.Services.AddHttpClient();
 // Register market data provider based on configuration
 if (marketDataSettings.Provider.Equals("Finnhub", StringComparison.OrdinalIgnoreCase))
 {
-    builder.Services.AddSingleton(new FinnhubOptions 
-    { 
+    builder.Services.AddSingleton(new FinnhubOptions
+    {
         ApiKey = marketDataSettings.ApiKey,
         BaseUrl = marketDataSettings.FinnhubBaseUrl
     });
@@ -44,8 +44,8 @@ if (marketDataSettings.Provider.Equals("Finnhub", StringComparison.OrdinalIgnore
 }
 else
 {
-    builder.Services.AddSingleton(new TwelveDataOptions 
-    { 
+    builder.Services.AddSingleton(new TwelveDataOptions
+    {
         ApiKey = marketDataSettings.ApiKey,
         BaseUrl = marketDataSettings.TwelveDataBaseUrl
     });
@@ -70,7 +70,7 @@ var summaries = new[]
 
 app.MapGet("/weatherforecast", () =>
 {
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
+    var forecast = Enumerable.Range(1, 5).Select(index =>
         new WeatherForecast
         (
             DateOnly.FromDateTime(DateTime.Now.AddDays(index)),

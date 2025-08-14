@@ -32,16 +32,16 @@ public class TwelveDataProvider : IMarketDataProvider
         {
             var url = $"{_options.BaseUrl}/quote?symbol={ticker}&apikey={_options.ApiKey}";
             var response = await _httpClient.GetAsync(url);
-            
+
             if (!response.IsSuccessStatusCode)
                 return null;
 
             var content = await response.Content.ReadAsStringAsync();
             var jsonDocument = JsonDocument.Parse(content);
-            
+
             if (!jsonDocument.RootElement.TryGetProperty("price", out var priceElement))
                 return null;
-                
+
             if (!double.TryParse(priceElement.GetString(), out var price))
                 return null;
 
@@ -62,26 +62,26 @@ public class TwelveDataProvider : IMarketDataProvider
         {
             var url = $"{_options.BaseUrl}/earnings?symbol={ticker}&apikey={_options.ApiKey}";
             var response = await _httpClient.GetAsync(url);
-            
+
             if (!response.IsSuccessStatusCode)
                 return Enumerable.Empty<EarningsEvent>();
 
             var content = await response.Content.ReadAsStringAsync();
             var jsonDocument = JsonDocument.Parse(content);
-            
-            if (!jsonDocument.RootElement.TryGetProperty("earnings", out var earningsElement) || 
+
+            if (!jsonDocument.RootElement.TryGetProperty("earnings", out var earningsElement) ||
                 earningsElement.ValueKind != JsonValueKind.Array)
                 return Enumerable.Empty<EarningsEvent>();
 
             var events = new List<EarningsEvent>();
-            
+
             foreach (var item in earningsElement.EnumerateArray())
             {
                 if (item.TryGetProperty("date", out var dateElement) &&
                     DateTime.TryParse(dateElement.GetString(), out var date))
                 {
                     var time = item.TryGetProperty("time", out var timeElement) ? timeElement.GetString() : null;
-                    
+
                     if (!fromDate.HasValue || date >= fromDate.Value)
                     {
                         if (!toDate.HasValue || date <= toDate.Value)
@@ -106,14 +106,14 @@ public class TwelveDataProvider : IMarketDataProvider
         {
             var url = $"{_options.BaseUrl}/sma?symbol={ticker}&interval=1day&time_period={period}&series_type=close&apikey={_options.ApiKey}";
             var response = await _httpClient.GetAsync(url);
-            
+
             if (!response.IsSuccessStatusCode)
                 return null;
 
             var content = await response.Content.ReadAsStringAsync();
             var jsonDocument = JsonDocument.Parse(content);
-            
-            if (!jsonDocument.RootElement.TryGetProperty("values", out var valuesElement) || 
+
+            if (!jsonDocument.RootElement.TryGetProperty("values", out var valuesElement) ||
                 valuesElement.ValueKind != JsonValueKind.Array)
                 return null;
 
@@ -141,14 +141,14 @@ public class TwelveDataProvider : IMarketDataProvider
         {
             var url = $"{_options.BaseUrl}/rsi?symbol={ticker}&interval=1day&time_period={period}&series_type=close&apikey={_options.ApiKey}";
             var response = await _httpClient.GetAsync(url);
-            
+
             if (!response.IsSuccessStatusCode)
                 return null;
 
             var content = await response.Content.ReadAsStringAsync();
             var jsonDocument = JsonDocument.Parse(content);
-            
-            if (!jsonDocument.RootElement.TryGetProperty("values", out var valuesElement) || 
+
+            if (!jsonDocument.RootElement.TryGetProperty("values", out var valuesElement) ||
                 valuesElement.ValueKind != JsonValueKind.Array)
                 return null;
 
@@ -176,14 +176,14 @@ public class TwelveDataProvider : IMarketDataProvider
         {
             var url = $"{_options.BaseUrl}/earnings?symbol={ticker}&apikey={_options.ApiKey}";
             var response = await _httpClient.GetAsync(url);
-            
+
             if (!response.IsSuccessStatusCode)
                 return null;
 
             var content = await response.Content.ReadAsStringAsync();
             var jsonDocument = JsonDocument.Parse(content);
-            
-            if (!jsonDocument.RootElement.TryGetProperty("earnings", out var earningsElement) || 
+
+            if (!jsonDocument.RootElement.TryGetProperty("earnings", out var earningsElement) ||
                 earningsElement.ValueKind != JsonValueKind.Array)
                 return null;
 
