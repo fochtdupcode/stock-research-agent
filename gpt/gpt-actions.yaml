@@ -1,0 +1,197 @@
+openapi: 3.1.0
+info:
+  title: Stock Research Agent API
+  description: API for stock analysis and trading recommendations
+  version: 1.0.0
+servers:
+  - url: https://YOUR-DOMAIN.example.com
+    description: Production server
+paths:
+  /api/search-recommendations:
+    post:
+      summary: Search for recommendations
+      description: Search for stock recommendations based on query parameters
+      operationId: searchRecommendations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query:
+                  type: string
+                  description: Search query string
+                sinceHours:
+                  type: integer
+                  description: Number of hours to look back for recommendations
+                maxItems:
+                  type: integer
+                  description: Maximum number of items to return
+                items:
+                  type: array
+                  description: Array of recommendation items
+                  items:
+                    $ref: '#/components/schemas/Recommendation'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Recommendation'
+        '400':
+          description: Bad request
+        '500':
+          description: Internal server error
+
+  /api/score-and-suggest:
+    post:
+      summary: Score recommendations and suggest trading decisions
+      description: Analyze recommendations and provide trading decisions based on portfolio constraints
+      operationId: scoreAndSuggest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                recIds:
+                  type: array
+                  description: Array of recommendation IDs
+                  items:
+                    type: string
+                recs:
+                  type: array
+                  description: Array of recommendations to analyze
+                  items:
+                    $ref: '#/components/schemas/Recommendation'
+                portfolio:
+                  $ref: '#/components/schemas/Portfolio'
+                  description: Portfolio information for decision making
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  decisions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DecisionCard'
+        '400':
+          description: Bad request
+        '500':
+          description: Internal server error
+
+components:
+  schemas:
+    Recommendation:
+      type: object
+      description: Stock recommendation with analysis data
+      properties:
+        Id:
+          type: string
+          description: Unique identifier for the recommendation
+        Ticker:
+          type: string
+          description: Stock ticker symbol
+        Action:
+          type: string
+          description: Recommended action (Buy, Sell, Hold)
+        Confidence:
+          type: number
+          format: double
+          description: Confidence score for the recommendation (0.0 to 1.0)
+        CreatedAt:
+          type: string
+          format: date-time
+          description: Timestamp when the recommendation was created
+      required:
+        - Id
+        - Ticker
+        - Action
+        - Confidence
+        - CreatedAt
+
+    Portfolio:
+      type: object
+      description: Portfolio information for trading decisions
+      properties:
+        Cash:
+          type: number
+          format: double
+          description: Available cash in the portfolio
+        Equity:
+          type: number
+          format: double
+          description: Current equity value in the portfolio
+        MaxPctPerTrade:
+          type: number
+          format: double
+          description: Maximum percentage of portfolio to risk per trade
+          default: 0.05
+      required:
+        - Cash
+        - Equity
+        - MaxPctPerTrade
+
+    DecisionCard:
+      type: object
+      description: Trading decision with confidence and metrics
+      properties:
+        RecId:
+          type: string
+          description: Reference to the recommendation ID
+        Action:
+          type: string
+          description: Recommended trading action
+          enum: [Ignore, Watch, PaperTrade, LiveSmall, Scale]
+        Confidence:
+          type: number
+          format: double
+          description: Confidence score for the decision (0.0 to 1.0)
+        Metrics:
+          type: array
+          description: Array of decision metrics
+          items:
+            $ref: '#/components/schemas/DecisionMetrics'
+      required:
+        - RecId
+        - Action
+        - Confidence
+        - Metrics
+
+    DecisionMetrics:
+      type: object
+      description: Metrics used in making trading decisions
+      properties:
+        SrcReliability:
+          type: number
+          format: double
+          description: Source reliability score
+        Rsi14:
+          type: number
+          format: double
+          description: 14-period Relative Strength Index
+        Trend20v50:
+          type: string
+          description: Trend comparison between 20-day and 50-day moving averages
+          enum: [Bullish, Bearish, Neutral, Unknown]
+        PeVsSectorPctile:
+          type: number
+          format: double
+          description: PE ratio percentile versus sector
+      required:
+        - SrcReliability
+        - Rsi14
+        - Trend20v50
+        - PeVsSectorPctile
