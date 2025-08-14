@@ -32,13 +32,13 @@ public class FinnhubProvider : IMarketDataProvider
         {
             var url = $"{_options.BaseUrl}/quote?symbol={ticker}&token={_options.ApiKey}";
             var response = await _httpClient.GetAsync(url);
-            
+
             if (!response.IsSuccessStatusCode)
                 return null;
 
             var content = await response.Content.ReadAsStringAsync();
             var jsonDocument = JsonDocument.Parse(content);
-            
+
             if (!jsonDocument.RootElement.TryGetProperty("c", out var priceElement))
                 return null;
 
@@ -47,7 +47,7 @@ public class FinnhubProvider : IMarketDataProvider
             {
                 price = priceElement.GetDouble();
             }
-            else if (priceElement.ValueKind == JsonValueKind.String && 
+            else if (priceElement.ValueKind == JsonValueKind.String &&
                      double.TryParse(priceElement.GetString(), out var parsedPrice))
             {
                 price = parsedPrice;
@@ -74,29 +74,29 @@ public class FinnhubProvider : IMarketDataProvider
         {
             var from = fromDate?.ToString("yyyy-MM-dd") ?? DateTime.Today.ToString("yyyy-MM-dd");
             var to = toDate?.ToString("yyyy-MM-dd") ?? DateTime.Today.AddYears(1).ToString("yyyy-MM-dd");
-            
+
             var url = $"{_options.BaseUrl}/calendar/earnings?symbol={ticker}&from={from}&to={to}&token={_options.ApiKey}";
             var response = await _httpClient.GetAsync(url);
-            
+
             if (!response.IsSuccessStatusCode)
                 return Enumerable.Empty<EarningsEvent>();
 
             var content = await response.Content.ReadAsStringAsync();
             var jsonDocument = JsonDocument.Parse(content);
-            
-            if (!jsonDocument.RootElement.TryGetProperty("earningsCalendar", out var earningsElement) || 
+
+            if (!jsonDocument.RootElement.TryGetProperty("earningsCalendar", out var earningsElement) ||
                 earningsElement.ValueKind != JsonValueKind.Array)
                 return Enumerable.Empty<EarningsEvent>();
 
             var events = new List<EarningsEvent>();
-            
+
             foreach (var item in earningsElement.EnumerateArray())
             {
                 if (item.TryGetProperty("date", out var dateElement) &&
                     DateTime.TryParse(dateElement.GetString(), out var date))
                 {
                     var time = item.TryGetProperty("hour", out var timeElement) ? timeElement.GetString() : null;
-                    
+
                     if (!fromDate.HasValue || date >= fromDate.Value)
                     {
                         if (!toDate.HasValue || date <= toDate.Value)
@@ -141,17 +141,17 @@ public class FinnhubProvider : IMarketDataProvider
         {
             var from = DateTime.Today.ToString("yyyy-MM-dd");
             var to = DateTime.Today.AddYears(1).ToString("yyyy-MM-dd");
-            
+
             var url = $"{_options.BaseUrl}/calendar/earnings?symbol={ticker}&from={from}&to={to}&token={_options.ApiKey}";
             var response = await _httpClient.GetAsync(url);
-            
+
             if (!response.IsSuccessStatusCode)
                 return null;
 
             var content = await response.Content.ReadAsStringAsync();
             var jsonDocument = JsonDocument.Parse(content);
-            
-            if (!jsonDocument.RootElement.TryGetProperty("earningsCalendar", out var earningsElement) || 
+
+            if (!jsonDocument.RootElement.TryGetProperty("earningsCalendar", out var earningsElement) ||
                 earningsElement.ValueKind != JsonValueKind.Array)
                 return null;
 
@@ -187,17 +187,17 @@ public class FinnhubProvider : IMarketDataProvider
         {
             var to = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             var from = DateTimeOffset.UtcNow.AddDays(-daysBack).ToUnixTimeSeconds();
-            
+
             var url = $"{_options.BaseUrl}/stock/candle?symbol={ticker}&resolution=D&from={from}&to={to}&token={_options.ApiKey}";
             var response = await _httpClient.GetAsync(url);
-            
+
             if (!response.IsSuccessStatusCode)
                 return null;
 
             var content = await response.Content.ReadAsStringAsync();
             var jsonDocument = JsonDocument.Parse(content);
-            
-            if (!jsonDocument.RootElement.TryGetProperty("c", out var closesElement) || 
+
+            if (!jsonDocument.RootElement.TryGetProperty("c", out var closesElement) ||
                 closesElement.ValueKind != JsonValueKind.Array)
                 return null;
 
@@ -210,7 +210,7 @@ public class FinnhubProvider : IMarketDataProvider
                     close = closeElement.GetDouble();
                     closes.Add(close);
                 }
-                else if (closeElement.ValueKind == JsonValueKind.String && 
+                else if (closeElement.ValueKind == JsonValueKind.String &&
                          double.TryParse(closeElement.GetString(), out var parsedClose))
                 {
                     close = parsedClose;

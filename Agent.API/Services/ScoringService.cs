@@ -8,16 +8,16 @@ public class ScoringService
     {
         // Calculate trend score from 20 vs 50 SMA
         var trendScore = CalculateTrendScore(snap);
-        
+
         // Calculate RSI score with preference for 30-70 band
         var rsiScore = CalculateRsiScore(snap);
-        
+
         // Calculate base score: 0.5*srcReliability + 0.3*trend + 0.2*rsiScore
         var baseScore = 0.5 * srcReliability + 0.3 * trendScore + 0.2 * rsiScore;
-        
+
         // Map to actions based on score
         var action = MapScoreToAction(baseScore, p);
-        
+
         // Create decision metrics
         var metrics = new DecisionMetrics
         {
@@ -26,7 +26,7 @@ public class ScoringService
             Trend20v50 = GetTrendFromSnapshot(snap),
             PeVsSectorPctile = 0 // Not specified in requirements, setting to 0
         };
-        
+
         return new DecisionCard
         {
             RecId = rec.Id,
@@ -35,18 +35,18 @@ public class ScoringService
             Metrics = new List<DecisionMetrics> { metrics }
         };
     }
-    
+
     private double CalculateTrendScore(Snapshot snap)
     {
         var sma20 = GetSmaFromSnapshot(snap, "SMA20");
         var sma50 = GetSmaFromSnapshot(snap, "SMA50");
-        
+
         if (sma20 == null || sma50 == null || sma20 == 0 || sma50 == 0)
             return 0.5; // Neutral score if data unavailable
-        
+
         // Positive trend if 20 SMA > 50 SMA, negative if opposite
         var ratio = sma20.Value / sma50.Value;
-        
+
         if (ratio > 1.02) // 20 SMA significantly above 50 SMA (strong uptrend)
             return 1.0;
         else if (ratio > 1.0) // 20 SMA above 50 SMA (mild uptrend)
@@ -58,14 +58,14 @@ public class ScoringService
         else // 20 SMA significantly below 50 SMA (strong downtrend)
             return 0.0;
     }
-    
+
     private double CalculateRsiScore(Snapshot snap)
     {
         var rsi = GetRsiFromSnapshot(snap);
-        
+
         if (rsi == 0)
             return 0.5; // Neutral score if RSI unavailable
-        
+
         // Prefer RSI in 30-70 range
         if (rsi >= 30 && rsi <= 70)
             return 1.0; // Optimal range
@@ -80,15 +80,15 @@ public class ScoringService
         else
             return 0.5; // Default
     }
-    
+
     private string MapScoreToAction(double baseScore, Portfolio? portfolio)
     {
         // Consider portfolio constraints if available
         var hasCapital = portfolio?.Cash > 0;
         var portfolioFactor = hasCapital ? 1.0 : 0.5; // Reduce action intensity if no capital
-        
+
         var adjustedScore = baseScore * portfolioFactor;
-        
+
         return adjustedScore switch
         {
             >= 0.8 => "Scale",        // High confidence, scale position
@@ -98,7 +98,7 @@ public class ScoringService
             _ => "Ignore"             // Very low confidence, ignore
         };
     }
-    
+
     private double? GetSmaFromSnapshot(Snapshot snap, string key)
     {
         if (snap.MarketData.TryGetValue(key, out var value))
@@ -112,23 +112,23 @@ public class ScoringService
         }
         return null;
     }
-    
+
     private double GetRsiFromSnapshot(Snapshot snap)
     {
-        var rsi = GetSmaFromSnapshot(snap, "RSI14") ?? 
+        var rsi = GetSmaFromSnapshot(snap, "RSI14") ??
                   GetSmaFromSnapshot(snap, "RSI") ??
                   0.0;
         return rsi;
     }
-    
+
     private string GetTrendFromSnapshot(Snapshot snap)
     {
         var sma20 = GetSmaFromSnapshot(snap, "SMA20");
         var sma50 = GetSmaFromSnapshot(snap, "SMA50");
-        
+
         if (sma20 == null || sma50 == null)
             return "Unknown";
-        
+
         if (sma20 > sma50)
             return "Bullish";
         else if (sma20 < sma50)
